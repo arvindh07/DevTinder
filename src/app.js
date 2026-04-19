@@ -136,7 +136,7 @@ app.patch("/user/:id", async (req, res) => {
 })
 
 // Unexpected error handling
-app.use("/", (err, req, res, next) => {
+app.use((err, req, res, next) => {
     if (err) {
         console.log("Last error ", err);
         return res.status(500).send("Internal Server Error");
