@@ -20,7 +20,7 @@ app.get("/", (req, res) => {
 
 app.post("/signup", async (req, res) => {
     try {
-        const { firstName, lastName, email, password } = req.body;
+        const { firstName, lastName, email, password, gender, age } = req.body;
 
         // check empty validation
         if (!firstName || !lastName || !email || !password) {
@@ -38,7 +38,9 @@ app.post("/signup", async (req, res) => {
             firstName,
             lastName,
             email,
+            gender,
             password, // need to hash
+            age
         });
 
         return res.status(201).json({
@@ -46,6 +48,9 @@ app.post("/signup", async (req, res) => {
         })
     } catch (error) {
         console.log("Error saving the user ", error.message);
+        return res.status(400).json({
+            message: error.message || "Something went wrong"
+        })
     }
 })
 
@@ -65,6 +70,9 @@ app.post("/user", async (req, res) => {
         })
     } catch (error) {
         console.log("Error in user api ", error.message);
+        return res.status(400).json({
+            message: error.message || "Something went wrong"
+        })
     }
 })
 
@@ -77,6 +85,9 @@ app.get("/feed", async (req, res) => {
         })
     } catch (error) {
         console.log("Error in feed api ", error.message);
+        return res.status(400).json({
+            message: error.message || "Something went wrong"
+        })
     }
 })
 
@@ -97,6 +108,9 @@ app.delete("/user/:id", async (req, res) => {
         })
     } catch (error) {
         console.log("Error in delete user api ", error.message);
+        return res.status(400).json({
+            message: error.message || "Something went wrong"
+        })
     }
 })
 
@@ -106,13 +120,18 @@ app.patch("/user/:id", async (req, res) => {
         const { id } = req.params;
         const body = req.body;
 
-        await User.findByIdAndUpdate(id, body);
+        await User.findByIdAndUpdate(id, body, {
+            runValidators: true
+        });
 
         return res.json({
             message: "User updated successfully"
         })
     } catch (error) {
         console.log("update error ", error.message);
+        return res.status(400).json({
+            message: error.message || "Something went wrong"
+        })
     }
 })
 
