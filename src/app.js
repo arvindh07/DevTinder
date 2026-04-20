@@ -2,6 +2,7 @@ const express = require("express");
 const dotenv = require("dotenv");
 const { connectToDB } = require("./config/database");
 const User = require("./models/user.model");
+const validator = require('validator');
 
 // load dotenv
 dotenv.config();
@@ -28,6 +29,11 @@ app.post("/signup", async (req, res) => {
         }
 
         // hash password
+        // email validation
+        if (!validator.isEmail(email)) {
+            return res.status(400).json({ message: `${email} is not a valid email address.` });
+        }
+
         // find if the user already exists
         const findUserByEmail = await User.findOne({ email });
 
@@ -123,11 +129,17 @@ app.patch("/user/:id", async (req, res) => {
         // remove email
         const allowedUpdates = ["profilePicture", "gender", "about", "skills"];
         const finalPayload = {};
-        
+
         for (const key in body) {
             const element = body[key];
             if (allowedUpdates.includes(key)) {
                 finalPayload[kye] = element;
+            }
+        }
+
+        if (body?.profilePicture) {
+            if (!validator.isURL(body?.profilePicture)) {
+                return res.status(400).json({ message: "Profile picture is not valid URL" });
             }
         }
 

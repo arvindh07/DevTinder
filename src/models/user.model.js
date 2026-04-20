@@ -17,14 +17,7 @@ const userSchema = new Schema({
         required: [true, "Email is required"],
         unique: true,
         trim: true,
-        lowercase: true,
-        validate: {
-            validator: function (email) {
-                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                return emailRegex.test(email);
-            },
-            message: "Invalid email format"
-        }
+        lowercase: true
     },
     gender: {
         type: String,
