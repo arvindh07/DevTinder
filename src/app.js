@@ -118,9 +118,20 @@ app.delete("/user/:id", async (req, res) => {
 app.patch("/user/:id", async (req, res) => {
     try {
         const { id } = req.params;
-        const body = req.body;
+        const body = req.body || {};
 
-        await User.findByIdAndUpdate(id, body, {
+        // remove email
+        const allowedUpdates = ["profilePicture", "gender", "about", "skills"];
+        const finalPayload = {};
+        
+        for (const key in body) {
+            const element = body[key];
+            if (allowedUpdates.includes(key)) {
+                finalPayload[kye] = element;
+            }
+        }
+
+        await User.findByIdAndUpdate(id, finalPayload, {
             runValidators: true
         });
 
