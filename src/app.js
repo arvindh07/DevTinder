@@ -3,6 +3,7 @@ const dotenv = require("dotenv");
 const { connectToDB } = require("./config/database");
 const User = require("./models/user.model");
 const validator = require('validator');
+const { validateSignupData } = require("./utils/validation");
 
 // load dotenv
 dotenv.config();
@@ -21,18 +22,12 @@ app.get("/", (req, res) => {
 
 app.post("/signup", async (req, res) => {
     try {
+        // validate the data
+        validateSignupData(req.body);
+
         const { firstName, lastName, email, password, gender, age } = req.body;
 
-        // check empty validation
-        if (!firstName || !lastName || !email || !password) {
-            return res.status(400).json({ message: "Fields are required" });
-        }
-
         // hash password
-        // email validation
-        if (!validator.isEmail(email)) {
-            return res.status(400).json({ message: `${email} is not a valid email address.` });
-        }
 
         // find if the user already exists
         const findUserByEmail = await User.findOne({ email });
@@ -40,6 +35,7 @@ app.post("/signup", async (req, res) => {
         if (findUserByEmail) {
             return res.status(400).json({ message: "Email already exists" });
         }
+
         await User.create({
             firstName,
             lastName,

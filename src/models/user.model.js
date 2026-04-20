@@ -35,15 +35,8 @@ const userSchema = new Schema({
         type: String,
         trim: true,
         required: [true, "Password is required"],
-        minLength: [6, "Enter atleast 6 characters"],
-        maxLength: [64, "Password cannot exceed 200 characters"],
-        validate: {
-            validator: function (password) {
-                const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d@$!%*?&]{6,}$/;
-                return passwordRegex.test(password);
-            },
-            message: "Invalid password format - At least 1 lowercase, 1 uppercase, 1 number. Allows common special characters"
-        }
+        minLength: [8, "Enter atleast 8 characters"],
+        maxLength: [64, "Password cannot exceed 200 characters"]
     },
     profilePicture: {
         type: String,
