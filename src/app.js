@@ -157,6 +157,38 @@ app.patch("/user/:id", async (req, res) => {
     }
 })
 
+// login api
+app.post("/login", async (req, res) => {
+    try {
+        const { email, password } = req.body;
+
+        const findUser = await User.findOne({ email });
+
+        if (!findUser) {
+            return res.status(400).json({
+                message: "Invalid credentials"
+            })
+        }
+
+        const isPasswordMatch = await bcrypt.compare(password, findUser.password);
+        if (!isPasswordMatch) {
+            return res.status(400).json({
+                message: "Invalid credentials"
+            })
+        }
+
+        // token generation
+        return res.status(200).json({
+            message: "Logged in successfully"
+        })
+    } catch (error) {
+        console.log("login error ", error.message);
+        return res.status(400).json({
+            message: error.message || "Something went wrong"
+        })
+    }
+})
+
 // Unexpected error handling
 app.use((err, req, res, next) => {
     if (err) {
