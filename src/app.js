@@ -4,6 +4,8 @@ const { connectToDB } = require("./config/database");
 const User = require("./models/user.model");
 const validator = require('validator');
 const { validateSignupData } = require("./utils/validation");
+const bcrypt = require('bcrypt');
+const { saltRounds } = require("./utils/constants");
 
 // load dotenv
 dotenv.config();
@@ -27,8 +29,6 @@ app.post("/signup", async (req, res) => {
 
         const { firstName, lastName, email, password, gender, age } = req.body;
 
-        // hash password
-
         // find if the user already exists
         const findUserByEmail = await User.findOne({ email });
 
@@ -36,12 +36,15 @@ app.post("/signup", async (req, res) => {
             return res.status(400).json({ message: "Email already exists" });
         }
 
+        // hash password
+        const hash = await bcrypt.hash(password, saltRounds);
+
         await User.create({
             firstName,
             lastName,
             email,
             gender,
-            password, // need to hash
+            password: hash, // need to hash
             age
         });
 
