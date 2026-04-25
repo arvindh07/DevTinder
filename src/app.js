@@ -6,6 +6,8 @@ const validator = require('validator');
 const { validateSignupData } = require("./utils/validation");
 const bcrypt = require('bcrypt');
 const { saltRounds } = require("./utils/constants");
+const jwt = require('jsonwebtoken');
+const cookieParser = require('cookie-parser')
 
 // load dotenv
 dotenv.config();
@@ -16,6 +18,7 @@ const PORT = process.env.PORT || 7777;
 
 // middlewares
 app.use(express.json());
+app.use(cookieParser())
 
 // Apis
 app.get("/", (req, res) => {
@@ -178,11 +181,49 @@ app.post("/login", async (req, res) => {
         }
 
         // token generation
+        const token = jwt.sign({
+            exp: Math.floor(Date.now() / 1000) + (60 * 60),
+            data: findUser._id
+        }, process.env.JWT_SECRET);
+
+        // save it in cookie
+        res.cookie('token', token, { secure: true });
         return res.status(200).json({
             message: "Logged in successfully"
         })
     } catch (error) {
         console.log("login error ", error.message);
+        return res.status(400).json({
+            message: error.message || "Something went wrong"
+        })
+    }
+})
+
+// profile api
+app.post("/profile", async (req, res) => {
+    try {
+        const token = req.cookies?.token;
+
+        if (!token) {
+            throw new Error("Invalid token");
+        }
+
+        // verify token
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const id = decoded?.data;
+
+        const findUser = await User.findById(id);
+        if (!findUser) {
+            return res.status(404).json({
+                message: "User not found"
+            })
+        }
+
+        return res.json({
+            user: findUser
+        })
+    } catch (error) {
+        console.log("Error in profile api ", error.message);
         return res.status(400).json({
             message: error.message || "Something went wrong"
         })
