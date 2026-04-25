@@ -2,6 +2,9 @@
 const express = require("express");
 const { validateEditProfileData } = require("../utils/validation");
 const User = require("../models/user.model");
+const validator = require('validator');
+const bcrypt = require('bcrypt');
+const { saltRounds } = require("../utils/constants");
 
 const userRouter = express.Router();
 
@@ -52,16 +55,22 @@ userRouter.patch("/edit", async (req, res) => {
 
 userRouter.patch("/password", async (req, res) => {
     try {
-        const { password, newPassword } = req.body;
+        const { password, newPassword } = req.body || {};
         const loggedInUser = req.user;
 
-        if (!password) {
+        if (!password || !newPassword) {
             return res.status(400).json({
                 message: "Password is required"
             })
         }
 
-        const isPasswordMatch = loggedInUser.comparePassword(password, loggedInUser.password);
+        if(password === newPassword) {
+            return res.status(400).json({
+                message: "New password is same as Old password. Please try a new one."
+            })
+        }
+
+        const isPasswordMatch = await loggedInUser.comparePassword(password, loggedInUser.password);
         if (!isPasswordMatch) {
             return res.status(400).json({
                 message: "Password doesnt match"
