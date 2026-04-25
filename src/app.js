@@ -2,12 +2,11 @@ const express = require("express");
 const dotenv = require("dotenv");
 const { connectToDB } = require("./config/database");
 const User = require("./models/user.model");
-const validator = require('validator');
 const { validateSignupData } = require("./utils/validation");
 const bcrypt = require('bcrypt');
 const { saltRounds } = require("./utils/constants");
-const jwt = require('jsonwebtoken');
-const cookieParser = require('cookie-parser')
+const cookieParser = require('cookie-parser');
+const { userAuth } = require("./middlewares/auth.middleware");
 
 // load dotenv
 dotenv.config();
@@ -25,6 +24,7 @@ app.get("/", (req, res) => {
     return res.json("Welcome to dev tinder backend🚀");
 })
 
+// signup api
 app.post("/signup", async (req, res) => {
     try {
         // validate the data
@@ -62,104 +62,6 @@ app.post("/signup", async (req, res) => {
     }
 })
 
-// get user by email
-app.post("/user", async (req, res) => {
-    try {
-        const { email } = req.body;
-        const findUser = await User.findOne({ email });
-        if (!findUser) {
-            return res.status(404).json({
-                message: "User not found"
-            })
-        }
-
-        return res.json({
-            user: findUser
-        })
-    } catch (error) {
-        console.log("Error in user api ", error.message);
-        return res.status(400).json({
-            message: error.message || "Something went wrong"
-        })
-    }
-})
-
-// feed api
-app.get("/feed", async (req, res) => {
-    try {
-        const users = await User.find({});
-        return res.json({
-            users
-        })
-    } catch (error) {
-        console.log("Error in feed api ", error.message);
-        return res.status(400).json({
-            message: error.message || "Something went wrong"
-        })
-    }
-})
-
-// delete api
-app.delete("/user/:id", async (req, res) => {
-    try {
-        const { id } = req.params;
-        const findUser = await User.findByIdAndDelete(id);
-
-        if (findUser) {
-            return res.json({
-                message: "User deleted successfully"
-            })
-        }
-
-        return res.json({
-            message: "Already deleted"
-        })
-    } catch (error) {
-        console.log("Error in delete user api ", error.message);
-        return res.status(400).json({
-            message: error.message || "Something went wrong"
-        })
-    }
-})
-
-// patch api
-app.patch("/user/:id", async (req, res) => {
-    try {
-        const { id } = req.params;
-        const body = req.body || {};
-
-        // remove email
-        const allowedUpdates = ["profilePicture", "gender", "about", "skills"];
-        const finalPayload = {};
-
-        for (const key in body) {
-            const element = body[key];
-            if (allowedUpdates.includes(key)) {
-                finalPayload[kye] = element;
-            }
-        }
-
-        if (body?.profilePicture) {
-            if (!validator.isURL(body?.profilePicture)) {
-                return res.status(400).json({ message: "Profile picture is not valid URL" });
-            }
-        }
-
-        await User.findByIdAndUpdate(id, finalPayload, {
-            runValidators: true
-        });
-
-        return res.json({
-            message: "User updated successfully"
-        })
-    } catch (error) {
-        console.log("update error ", error.message);
-        return res.status(400).json({
-            message: error.message || "Something went wrong"
-        })
-    }
-})
-
 // login api
 app.post("/login", async (req, res) => {
     try {
@@ -173,7 +75,7 @@ app.post("/login", async (req, res) => {
             })
         }
 
-        const isPasswordMatch = await bcrypt.compare(password, findUser.password);
+        const isPasswordMatch = await findUser.comparePassword(password);
         if (!isPasswordMatch) {
             return res.status(400).json({
                 message: "Invalid credentials"
@@ -181,10 +83,7 @@ app.post("/login", async (req, res) => {
         }
 
         // token generation
-        const token = jwt.sign({
-            exp: Math.floor(Date.now() / 1000) + (60 * 60),
-            data: findUser._id
-        }, process.env.JWT_SECRET);
+        const token = findUser.getJWT();
 
         // save it in cookie
         res.cookie('token', token, { secure: true });
@@ -200,24 +99,9 @@ app.post("/login", async (req, res) => {
 })
 
 // profile api
-app.post("/profile", async (req, res) => {
+app.post("/profile", userAuth, async (req, res) => {
     try {
-        const token = req.cookies?.token;
-
-        if (!token) {
-            throw new Error("Invalid token");
-        }
-
-        // verify token
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        const id = decoded?.data;
-
-        const findUser = await User.findById(id);
-        if (!findUser) {
-            return res.status(404).json({
-                message: "User not found"
-            })
-        }
+        const findUser = req.user;
 
         return res.json({
             user: findUser
