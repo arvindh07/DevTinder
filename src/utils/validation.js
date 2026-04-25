@@ -22,4 +22,18 @@ const validateSignupData = (data) => {
     }
 }
 
-module.exports = { validateSignupData };
+const validateEditProfileData = (data) => {
+    const allowedFieldEdits = ["firstName", "lastName", "gender", "age", "profilePicture", "about", "skills"];
+    const finalPayload = {};
+    for (const key in data) {
+        const element = data[key];
+
+        if(allowedFieldEdits.includes(key)) {
+            finalPayload[key] = element;
+        }
+    }
+
+    return finalPayload;
+}
+
+module.exports = { validateSignupData, validateEditProfileData };
