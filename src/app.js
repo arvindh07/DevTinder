@@ -3,9 +3,9 @@ const dotenv = require("dotenv");
 const { connectToDB } = require("./config/database");
 const cookieParser = require('cookie-parser');
 const { userAuth } = require("./middlewares/auth.middleware");
-const { authRouter } = require("./routes/authRouter");
-const { requestRouter } = require("./routes/requestRouter");
-const { userRouter } = require("./routes/userRouter");
+const { authRouter } = require("./routes/auth.router");
+const { requestRouter } = require("./routes/connectionRequest.router");
+const { userRouter } = require("./routes/user.router");
 
 // load dotenv
 dotenv.config();
@@ -25,7 +25,7 @@ app.get("/", (req, res) => {
 
 app.use("/auth", authRouter);
 app.use("/profile", userAuth, userRouter);
-app.use("/request", requestRouter);
+app.use("/request", userAuth, requestRouter);
 
 // Unexpected error handling
 app.use((err, req, res, next) => {
